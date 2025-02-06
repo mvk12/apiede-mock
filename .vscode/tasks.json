@@ -1,0 +1,19 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run App",
+            "command": "php -S localhost:${input:portNumber} -t public",
+            "type": "shell",
+            "group": "none"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "portNumber",
+            "type": "promptString",
+            "description": "HTTP port",
+            "default": "8000"
+        }
+    ]
+}
