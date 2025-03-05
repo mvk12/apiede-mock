@@ -19,41 +19,50 @@ $app->addErrorMiddleware(true, true, true);
 
 // Add routes
 $app->get('/', function (Request $request, Response $response) {
-    $response->getBody()->write('<h1>Hello world?</h1>');
+  $response->getBody()->write('<h1>Hello world?</h1>');
 
-    return $response;
+  return $response;
 });
 
 $app->get('/otp/verify-otp', function (Request $request, Response $response) {
-    $input = $request->getQueryParams();
+  $input = $request->getQueryParams();
 
-    $rut = $input['rut'] ?? null;
+  $rut = $input['rut'] ?? null;
+  $otp = (string) ($input['otp'] ?? '');
 
-    if (empty($rut)) {
-        $response->getBody()->write(json_encode([
-            'status' => 500,
-            'body' => '"ERROR: El formato del RUT: @!rut es inv\\u00e1lido."',
-        ]));
+  if (empty($rut)) {
+    $response->getBody()->write(json_encode([
+        'status' => 500,
+        'body' => '"ERROR: El formato del RUT: @!rut es inv\\u00e1lido."',
+    ]));
 
-    } else {
-        $defaultStatus = $_ENV['DEFAULT_STATUS'] ?? 'verified';
-
-        $otpVerify = match ($defaultStatus) {
-            'verified' => true,
-            'rejected' => false,
-            default => mt_rand() > 0.5 ? true : false
-        };
-
-        $response->getBody()->write(json_encode([
-            'body' => json_encode([
-                ['O' => 0, 'RUT' => $rut, 'OTPVERIFY' => $otpVerify]
-            ])
-        ]));
-    }
-    
     $response->withAddedHeader('Content-Type', 'application/json');
 
     return $response;
+  }
+
+  $defaultStatus = $_ENV['DEFAULT_STATUS'] ?? 'verified';
+
+  $otpVerify = null;
+  if ($otp === $_ENV['DEFAULT_FAILED_TOTP']) {
+    $otpVerify  = 'rejected';
+  } else {
+    $otpVerify = match ($defaultStatus) {
+      'verified' => true,
+      'rejected' => false,
+      default => mt_rand() > 0.5 ? true : false
+    };
+  }
+
+  $response->getBody()->write(json_encode([
+    'body' => json_encode([
+      ['O' => 0, 'RUT' => $rut, 'OTPVERIFY' => $otpVerify]
+    ])
+  ]));
+
+  $response->withAddedHeader('Content-Type', 'application/json');
+
+  return $response;
 });
 
 $app->run();
